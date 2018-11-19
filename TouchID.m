@@ -26,7 +26,7 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
                   options:(NSDictionary *)options
                   callback: (RCTResponseSenderBlock)callback)
 {
-    NSNumber *passcodeFallback = [NSNumber numberWithBool:false];
+    Boolean passcodeFallback = false;
     LAContext *context = [[LAContext alloc] init];
     NSError *error;
 
@@ -36,11 +36,11 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
     }
 
     if (RCTNilIfNull([options objectForKey:@"passcodeFallback"]) != nil) {
-        passcodeFallback = [RCTConvert NSNumber:options[@"passcodeFallback"]];
+        passcodeFallback = [[RCTConvert NSNumber:options[@"passcodeFallback"]] boolValue];
     }
 
     // Only TouchID
-    if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error] && ![passcodeFallback boolValue]) {
+    if (!passcodeFallback && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error]) {
         [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
                 localizedReason:reason
                           reply:^(BOOL success, NSError *error)
@@ -49,7 +49,7 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
          }];
 
     // TouchID or passcode
-    } else if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
+    } else if (passcodeFallback && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
         [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
                 localizedReason:reason
                           reply:^(BOOL success, NSError *error)
