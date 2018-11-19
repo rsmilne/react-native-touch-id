@@ -57,7 +57,7 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
              [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
          }];
     } else {
-        callback(@[RCTMakeError(@"RCTTouchIDNotSupported", nil, nil)]);
+        [self handleAttemptToUseDeviceIDWithSuccess:nil error:error callback:callback];
         return;
     }
 }
