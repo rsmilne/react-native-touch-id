@@ -19,6 +19,14 @@ declare module 'react-native-touch-id' {
    */
   export interface AuthenticateConfig extends IsSupportedConfig {
     /**
+     * ** By default specified 'Fallback' label. If set to empty string label is invisible.
+     */
+    fallbackLabel?: string;
+    /**
+     * ** By default set to false. If set to true, will allow use of keypad passcode.
+     */
+    passcodeFallback?: boolean;
+    /**
      * **Android only** - Title of confirmation dialog
      */
     title?: string;
@@ -42,14 +50,6 @@ declare module 'react-native-touch-id' {
      * **Android only** - Cancel button text
      */
     cancelText?: string;
-    /**
-     * **iOS only** - By default specified 'Show Password' label. If set to empty string label is invisible.
-     */
-    fallbackLabel?: string;
-    /**
-     * **iOS only** - By default set to false. If set to true, will allow use of keypad passcode.
-     */
-    passcodeFallback?: boolean;
   }
   /**
    * `isSupported` error code
