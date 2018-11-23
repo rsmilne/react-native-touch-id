@@ -102,7 +102,6 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
 
         final FingerprintDialog fingerprintDialog = new FingerprintDialog();
         fingerprintDialog.setCryptoObject(cryptoObject);
-        fingerprintDialog.setReasonForAuthentication(reason);
         fingerprintDialog.setAuthConfig(authConfig);
         fingerprintDialog.setDialogCallback(dialogResultHandler);
 
