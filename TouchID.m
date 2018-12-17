@@ -16,9 +16,7 @@ RCT_EXPORT_METHOD(isSupported: (RCTResponseSenderBlock)callback)
         
     } else if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
         callback(@[[NSNull null], [self getBiometryType:context]]);
-    }
-    // Device does not support FaceID / TouchID / Pin
-    else {
+    } else {
         callback(@[RCTMakeError(@"RCTTouchIDNotSupported", nil, nil)]);
         return;
     }
@@ -28,7 +26,7 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
                   options:(NSDictionary *)options
                   callback: (RCTResponseSenderBlock)callback)
 {
-    NSNumber *passcodeFallback = [NSNumber numberWithBool:false];
+    Boolean passcodeFallback = false;
     LAContext *context = [[LAContext alloc] init];
     NSError *error;
 
@@ -38,12 +36,11 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
     }
 
     if (RCTNilIfNull([options objectForKey:@"passcodeFallback"]) != nil) {
-        passcodeFallback = [RCTConvert NSNumber:options[@"passcodeFallback"]];
+        passcodeFallback = [[RCTConvert NSNumber:options[@"passcodeFallback"]] boolValue];
     }
 
-    // Device has TouchID
-    if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error]) {
-        // Attempt Authentification
+    // Only TouchID
+    if (!passcodeFallback && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:&error]) {
         [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
                 localizedReason:reason
                           reply:^(BOOL success, NSError *error)
@@ -51,18 +48,16 @@ RCT_EXPORT_METHOD(authenticate: (NSString *)reason
              [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
          }];
 
-        // Device does not support TouchID but user wishes to use passcode fallback
-    } else if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error] && [passcodeFallback boolValue]) {
-        // Attempt Authentification
+    // TouchID or passcode
+    } else if (passcodeFallback && [context canEvaluatePolicy:LAPolicyDeviceOwnerAuthentication error:&error]) {
         [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
                 localizedReason:reason
                           reply:^(BOOL success, NSError *error)
          {
              [self handleAttemptToUseDeviceIDWithSuccess:success error:error callback:callback];
          }];
-    }
-    else {
-        callback(@[RCTMakeError(@"RCTTouchIDNotSupported", nil, nil)]);
+    } else {
+        [self handleAttemptToUseDeviceIDWithSuccess:nil error:error callback:callback];
         return;
     }
 }
