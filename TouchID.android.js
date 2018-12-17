@@ -18,17 +18,18 @@ export default {
   },
 
   authenticate(reason, config) {
-    DEFAULT_CONFIG = {
+    var DefaultConfig = {
       title: 'Authentication Required',
-      imageColor: '#1306ff',
-      imageErrorColor: '#ff0000',
       sensorDescription: 'Touch sensor',
       sensorErrorDescription: 'Failed',
       cancelText: 'Cancel',
-      unifiedErrors: false
+      unifiedErrors: false,
+      fallbackLabel: 'Show password',
+      passcodeFallback: false,
     };
+
     var authReason = reason ? reason : ' ';
-    var authConfig = Object.assign({}, DEFAULT_CONFIG, config);
+    var authConfig = Object.assign({}, DefaultConfig, config);
     var imageColor = processColor(authConfig.imageColor);
     var imageErrorColor = processColor(authConfig.imageErrorColor);
 

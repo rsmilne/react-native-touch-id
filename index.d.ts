@@ -19,11 +19,11 @@ declare module 'react-native-touch-id' {
    */
   export interface AuthenticateConfig extends IsSupportedConfig {
     /**
-     * ** By default specified 'Fallback' label. If set to empty string label is invisible.
+     * * By default specified 'Show Password' label. If set to empty string label is invisible.
      */
     fallbackLabel?: string;
     /**
-     * ** By default set to false. If set to true, will allow use of keypad passcode.
+     * * By default set to false. If set to true, will allow use of keypad passcode.
      */
     passcodeFallback?: boolean;
     /**
