@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
+import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
@@ -17,6 +18,9 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 
 import javax.crypto.Cipher;
+
+import static android.content.Context.KEYGUARD_SERVICE;
+import static com.rnfingerprint.FingerprintDialog.FALLBACK_REQUEST_CODE;
 
 public class FingerprintAuthModule extends ReactContextBaseJavaModule implements LifecycleEventListener, ActivityEventListener {
 
@@ -79,26 +83,33 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         inProgress = true;
 
         int availableResult = isFingerprintAuthAvailable();
-        if (availableResult != FingerprintAuthConstants.IS_SUPPORTED) {
+        boolean fallback = false;
+
+        if (authConfig.hasKey("passcodeFallback")) {
+            fallback = authConfig.getBoolean(("passcodeFallback"));
+        }
+
+        if (availableResult != FingerprintAuthConstants.IS_SUPPORTED && !fallback) {
             inProgress = false;
             reactErrorCallback.invoke(getErrorText(availableResult), availableResult);
             return;
         }
 
-        /* FINGERPRINT ACTIVITY RELATED STUFF */
         final Cipher cipher = new FingerprintCipher().getCipher();
-        if (cipher == null) {
+        if (cipher == null && !fallback) {
             inProgress = false;
             reactErrorCallback.invoke("Not supported", FingerprintAuthConstants.NOT_AVAILABLE);
             return;
         }
 
-        // We should call it only when we absolutely sure that API >= 23.
-        // Otherwise we will get the crash on older versions.
-        // TODO: migrate to FingerprintManagerCompat
-        final FingerprintManager.CryptoObject cryptoObject = new FingerprintManager.CryptoObject(cipher);
+        dialogResultHandler = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
 
-        this.dialogResultHandler = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
+        if (cipher == null) {
+            openSystemAuthentication(reactSuccessCallback);
+            return;
+        }
+
+        final FingerprintManagerCompat.CryptoObject cryptoObject = new FingerprintManagerCompat.CryptoObject(cipher);
 
         final FingerprintDialog fingerprintDialog = new FingerprintDialog();
         fingerprintDialog.setCryptoObject(cryptoObject);
@@ -125,9 +136,6 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
 
         final KeyguardManager keyguardManager = getKeyguardManager();
 
-        // We should call it only when we absolutely sure that API >= 23.
-        // Otherwise we will get the crash on older versions.
-        // TODO: migrate to FingerprintManagerCompat
         final FingerprintManager fingerprintManager = (FingerprintManager) activity.getSystemService(Context.FINGERPRINT_SERVICE);
 
         if (fingerprintManager == null || !fingerprintManager.isHardwareDetected()) {
@@ -174,6 +182,28 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         return errorText;
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void openSystemAuthentication(final Callback successCallback) {
+        final Activity activity = getCurrentActivity();
+
+        if (activity == null) {
+            return;
+        }
+
+        KeyguardManager km = (KeyguardManager) activity.getSystemService(KEYGUARD_SERVICE);
+
+        if (km != null) {
+            Intent i = km.createConfirmDeviceCredentialIntent("", "");
+
+            if (i != null) {
+                activity.startActivityForResult(i, FALLBACK_REQUEST_CODE);
+            } else {
+                inProgress = false;
+                successCallback.invoke("Successfully authenticated.");
+            }
+        }
+    }
+
     @Override
     public void onHostResume() {
         isAppActive = true;
@@ -191,9 +221,10 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
 
     @Override
     public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
-        if (requestCode == FingerprintDialog.FALLBACK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+        inProgress = false;
+        if (requestCode == FALLBACK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
             dialogResultHandler.onAuthenticated();
-        } else if (requestCode == FingerprintDialog.FALLBACK_REQUEST_CODE) {
+        } else if (requestCode == FALLBACK_REQUEST_CODE) {
             dialogResultHandler.onError("Authentication cancelled", FingerprintAuthConstants.AUTHENTICATION_CANCELED);
         }
     }

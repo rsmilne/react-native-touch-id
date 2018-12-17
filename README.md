@@ -159,7 +159,6 @@ __Arguments__
   - `unifiedErrors` - return unified error messages (see below) (default = false)
   - `passcodeFallback` - **iOS** - by default set to false. If set to true, will allow use of keypad passcode.
 
-
 __Examples__
 ```js
 const optionalConfigObject = {
