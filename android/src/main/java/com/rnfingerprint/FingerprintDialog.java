@@ -1,9 +1,13 @@
 package com.rnfingerprint;
 
+import android.annotation.TargetApi;
 import android.app.DialogFragment;
+import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -15,7 +19,10 @@ import android.widget.TextView;
 
 import com.facebook.react.bridge.ReadableMap;
 
+import static android.content.Context.KEYGUARD_SERVICE;
+
 public class FingerprintDialog extends DialogFragment implements FingerprintHandler.Callback {
+    public static final int FALLBACK_REQUEST_CODE = 10;
 
     private FingerprintManager.CryptoObject mCryptoObject;
     private DialogResultListener dialogCallback;
@@ -31,6 +38,8 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
     private int imageErrorColor = 0;
     private String dialogTitle = "";
     private String cancelText = "";
+    private String fallbackText;
+    private boolean fallbackEnabled = false;
     private String sensorDescription = "";
     private String sensorErrorDescription = "";
     private String errorText = "";
@@ -75,6 +84,20 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
                 onCancelled();
             }
         });
+
+        if (this.fallbackEnabled) {
+            final Button fallbackButton = (Button) v.findViewById(R.id.fallback_button);
+            fallbackButton.setVisibility(View.VISIBLE);
+            if (this.fallbackText != null) {
+                fallbackButton.setText(this.fallbackText);
+            }
+            fallbackButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    onFallback();
+                }
+            });
+        }
 
         getDialog().setTitle(this.dialogTitle);
         getDialog().setOnKeyListener(new DialogInterface.OnKeyListener() {
@@ -138,6 +161,14 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
             this.cancelText = config.getString("cancelText");
         }
 
+        if (config.hasKey("passcodeFallback")) {
+            this.fallbackEnabled = config.getBoolean("passcodeFallback");
+        }
+
+        if (config.hasKey("fallbackLabel")) {
+            this.fallbackText = config.getString("fallbackLabel");
+        }
+
         if (config.hasKey("sensorDescription")) {
             this.sensorDescription = config.getString("sensorDescription");
         }
@@ -182,6 +213,22 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
         this.isAuthInProgress = false;
         this.mFingerprintHandler.endAuth();
         this.dialogCallback.onCancelled();
+        dismiss();
+    }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void onFallback() {
+        if (getActivity() == null) {
+            return;
+        }
+
+        KeyguardManager km = (KeyguardManager) getActivity().getSystemService(KEYGUARD_SERVICE);
+
+        if (km != null) {
+            Intent i = km.createConfirmDeviceCredentialIntent("", "");
+            getActivity().startActivityForResult(i, FALLBACK_REQUEST_CODE);
+        }
+
         dismiss();
     }
 }

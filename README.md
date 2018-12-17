@@ -64,7 +64,7 @@ There's excellent documentation on how to do this in the [React Native Docs](htt
 
 iOS and Android differ slightly in their TouchID authentication.
 
-On Android you can customize the title and color of the pop-up by passing in the **optional config object** with a color and title key to the `authenticate` method. Even if you pass in the config object, iOS **does not** allow you change the color nor the title of the pop-up. iOS does support `passcodeFallback` as an option, which when set to `true` will allow users to use their device pin - useful for people with Face / Touch ID disabled. Passcode fallback only happens if the device does not have touch id or face id enabled.
+On Android you can customize the title and color of the pop-up by passing in the **optional config object** with a color and title key to the `authenticate` method. Even if you pass in the config object, iOS **does not** allow you change the color nor the title of the pop-up. Both Android and iOS support `passcodeFallback` as an option, which when set to `true` will allow users to use their device pin or pattern - useful for people with Face / Touch ID disabled.
 
 Error handling is also different between the platforms, with iOS currently providing much more descriptive error codes.
 
@@ -156,9 +156,9 @@ __Arguments__
   - `sensorDescription` - **Android** - text shown next to the fingerprint image
   - `sensorErrorDescription` - **Android** - text shown next to the fingerprint image after failed attempt
   - `cancelText` - **Android** - cancel button text
-  - `fallbackLabel` - **iOS** - by default specified 'Show Password' label. If set to empty string label is invisible.
+  - `fallbackLabel` - by default specified 'Fallback' label. If set to empty string label is invisible.
   - `unifiedErrors` - return unified error messages (see below) (default = false)
-  - `passcodeFallback` - **iOS** - by default set to false. If set to true, will allow use of keypad passcode.
+  - `passcodeFallback` - by default set to false. If set to true, will allow use of keypad passcode.
 
 
 __Examples__
@@ -170,9 +170,9 @@ const optionalConfigObject = {
   sensorDescription: "Touch sensor", // Android
   sensorErrorDescription: "Failed", // Android
   cancelText: "Cancel", // Android
-  fallbackLabel: "Show Passcode", // iOS (if empty, then label is hidden)
+  fallbackLabel: "Show Passcode", // if empty, then label is hidden
   unifiedErrors: false, // use unified error messages (default false)
-  passcodeFallback: false // iOS
+  passcodeFallback: false
 }
 
 TouchID.authenticate('to demo this react-native component', optionalConfigObject)

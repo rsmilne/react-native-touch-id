@@ -4,9 +4,11 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 
+import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -16,12 +18,13 @@ import com.facebook.react.bridge.ReadableMap;
 
 import javax.crypto.Cipher;
 
-public class FingerprintAuthModule extends ReactContextBaseJavaModule implements LifecycleEventListener {
+public class FingerprintAuthModule extends ReactContextBaseJavaModule implements LifecycleEventListener, ActivityEventListener {
 
     private static final String FRAGMENT_TAG = "fingerprint_dialog";
 
     private KeyguardManager keyguardManager;
     private boolean isAppActive;
+    private DialogResultHandler dialogResultHandler;
 
     public static boolean inProgress = false;
 
@@ -29,6 +32,7 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         super(reactContext);
 
         reactContext.addLifecycleEventListener(this);
+        reactContext.addActivityEventListener(this);
     }
 
     private KeyguardManager getKeyguardManager() {
@@ -77,7 +81,7 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         int availableResult = isFingerprintAuthAvailable();
         if (availableResult != FingerprintAuthConstants.IS_SUPPORTED) {
             inProgress = false;
-            reactErrorCallback.invoke("Not supported", availableResult);
+            reactErrorCallback.invoke(getErrorText(availableResult), availableResult);
             return;
         }
 
@@ -94,13 +98,13 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         // TODO: migrate to FingerprintManagerCompat
         final FingerprintManager.CryptoObject cryptoObject = new FingerprintManager.CryptoObject(cipher);
 
-        final DialogResultHandler drh = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
+        this.dialogResultHandler = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
 
         final FingerprintDialog fingerprintDialog = new FingerprintDialog();
         fingerprintDialog.setCryptoObject(cryptoObject);
         fingerprintDialog.setReasonForAuthentication(reason);
         fingerprintDialog.setAuthConfig(authConfig);
-        fingerprintDialog.setDialogCallback(drh);
+        fingerprintDialog.setDialogCallback(dialogResultHandler);
 
         if (!isAppActive) {
             inProgress = false;
@@ -141,6 +145,36 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
         return FingerprintAuthConstants.IS_SUPPORTED;
     }
 
+    private String getErrorText(int authError) {
+        String errorText;
+
+        switch (authError) {
+            case FingerprintAuthConstants.NOT_PRESENT:
+                errorText = "Not present";
+                break;
+            case FingerprintAuthConstants.NOT_AVAILABLE:
+                errorText = "Not available";
+                break;
+            case FingerprintAuthConstants.NOT_ENROLLED:
+                errorText = "Not enrolled";
+                break;
+            case FingerprintAuthConstants.AUTHENTICATION_FAILED:
+                errorText = "Authentication failed";
+                break;
+            case FingerprintAuthConstants.AUTHENTICATION_CANCELED:
+                errorText = "Authentication cancelled";
+                break;
+            case FingerprintAuthConstants.IS_SUPPORTED:
+                errorText = null;
+                break;
+            default:
+                errorText = "Not supported";
+                break;
+        }
+
+        return errorText;
+    }
+
     @Override
     public void onHostResume() {
         isAppActive = true;
@@ -154,5 +188,18 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
     @Override
     public void onHostDestroy() {
         isAppActive = false;
+    }
+
+    @Override
+    public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        if (requestCode == FingerprintDialog.FALLBACK_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            dialogResultHandler.onAuthenticated();
+        } else if (requestCode == FingerprintDialog.FALLBACK_REQUEST_CODE) {
+            dialogResultHandler.onError("Authentication cancelled", FingerprintAuthConstants.AUTHENTICATION_CANCELED);
+        }
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
     }
 }
