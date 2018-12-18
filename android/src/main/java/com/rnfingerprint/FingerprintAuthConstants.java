@@ -10,4 +10,8 @@ public final class FingerprintAuthConstants {
     public static final int AUTHENTICATION_CANCELED = 106;
 
     private FingerprintAuthConstants() {}
+
+    public static boolean isFingerprintNotPresent(int state) {
+        return  state == NOT_SUPPORTED || state == NOT_PRESENT || state == NOT_AVAILABLE || state == NOT_ENROLLED;
+    }
 }

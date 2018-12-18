@@ -88,23 +88,23 @@ public class FingerprintAuthModule extends ReactContextBaseJavaModule implements
             fallback = authConfig.getBoolean(("passcodeFallback"));
         }
 
+        final Cipher cipher = new FingerprintCipher().getCipher();
+        dialogResultHandler = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
+
+        if (fallback && (cipher == null || FingerprintAuthConstants.isFingerprintNotPresent(availableResult))) {
+            openSystemAuthentication(reactSuccessCallback);
+            return;
+        }
+
         if (availableResult != FingerprintAuthConstants.IS_SUPPORTED && !fallback) {
             inProgress = false;
             reactErrorCallback.invoke(getErrorText(availableResult), availableResult);
             return;
         }
 
-        final Cipher cipher = new FingerprintCipher().getCipher();
-        if (cipher == null && !fallback) {
+        if (cipher == null) {
             inProgress = false;
             reactErrorCallback.invoke("Not supported", FingerprintAuthConstants.NOT_AVAILABLE);
-            return;
-        }
-
-        dialogResultHandler = new DialogResultHandler(reactErrorCallback, reactSuccessCallback);
-
-        if (cipher == null) {
-            openSystemAuthentication(reactSuccessCallback);
             return;
         }
 
