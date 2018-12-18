@@ -1,29 +1,29 @@
 package com.rnfingerprint;
 
 import android.annotation.TargetApi;
+import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.content.Context;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
-import android.support.v4.os.CancellationSignal;
+import android.os.CancellationSignal;
 
 @TargetApi(Build.VERSION_CODES.M)
-public class FingerprintHandler extends FingerprintManagerCompat.AuthenticationCallback {
+public class FingerprintHandler extends FingerprintManager.AuthenticationCallback {
 
     private CancellationSignal cancellationSignal;
     private boolean selfCancelled;
 
-    private final FingerprintManagerCompat mFingerprintManager;
+    private final FingerprintManager mFingerprintManager;
     private final Callback mCallback;
 
     public FingerprintHandler(Context context, Callback callback) {
-        mFingerprintManager = context.getSystemService(FingerprintManagerCompat.class);
+        mFingerprintManager = context.getSystemService(FingerprintManager.class);
         mCallback = callback;
     }
 
-    public void startAuth(FingerprintManagerCompat.CryptoObject cryptoObject) {
+    public void startAuth(FingerprintManager.CryptoObject cryptoObject) {
         cancellationSignal = new CancellationSignal();
         selfCancelled = false;
-        mFingerprintManager.authenticate(cryptoObject, 0, cancellationSignal, this, null);
+        mFingerprintManager.authenticate(cryptoObject, cancellationSignal, 0, this, null);
     }
 
     public void endAuth() {
@@ -44,7 +44,7 @@ public class FingerprintHandler extends FingerprintManagerCompat.AuthenticationC
     }
 
     @Override
-    public void onAuthenticationSucceeded(FingerprintManagerCompat.AuthenticationResult result) {
+    public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
         mCallback.onAuthenticated();
         cancelAuthenticationSignal();
     }

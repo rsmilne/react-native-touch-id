@@ -14,7 +14,6 @@ import android.graphics.drawable.Drawable;
 import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 import android.widget.TextView;
 
 import com.facebook.react.bridge.ReadableMap;
@@ -30,7 +29,7 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
         void onCancelled();
     }
 
-    private FingerprintManagerCompat.CryptoObject mCryptoObject;
+    private FingerprintManager.CryptoObject mCryptoObject;
     private DialogResultListener dialogCallback;
     private FingerprintHandler mFingerprintHandler;
     private boolean isAuthInProgress;
@@ -117,7 +116,7 @@ public class FingerprintDialog extends DialogFragment implements FingerprintHand
     }
 
 
-    public void setCryptoObject(FingerprintManagerCompat.CryptoObject cryptoObject) {
+    public void setCryptoObject(FingerprintManager.CryptoObject cryptoObject) {
         this.mCryptoObject = cryptoObject;
     }
 
