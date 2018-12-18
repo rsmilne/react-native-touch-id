@@ -12,6 +12,6 @@ public final class FingerprintAuthConstants {
     private FingerprintAuthConstants() {}
 
     public static boolean isFingerprintNotPresent(int state) {
-        return  state == NOT_SUPPORTED || state == NOT_PRESENT || state == NOT_AVAILABLE || state == NOT_ENROLLED;
+        return state == NOT_SUPPORTED || state == NOT_PRESENT || state == NOT_AVAILABLE || state == NOT_ENROLLED;
     }
 }
